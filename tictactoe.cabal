@@ -6,7 +6,7 @@ cabal-version: 1.12
 --
 -- hash: 7a4de3fc1a11ae6195a42ddbcbce6461097490d778fb59fd163f3d0f1ddc595d
 
-name:           tictactoeclient
+name:           tictactoe
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/tictactoeclient#readme>
 homepage:       https://github.com/githubuser/tictactoeclient#readme
@@ -23,11 +23,12 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/tictactoeclient
+  location: https://github.com/vargroozzz/tictactoeclient
 
 library
   exposed-modules:
-      Lib
+      Tictactoe
+    , UI.Dialog
   other-modules:
       Paths_tictactoeclient
   hs-source-dirs:
@@ -48,7 +49,7 @@ library
     , vector
   default-language: Haskell2010
 
-executable tictactoeclient-exe
+executable tictactoe
   main-is: Main.hs
   other-modules:
       Paths_tictactoeclient
@@ -58,7 +59,7 @@ executable tictactoeclient-exe
   build-depends:
       base >=4.7 && <5
     , brick
-    , tictactoeclient
+    , tictactoe
   default-language: Haskell2010
 
 test-suite tictactoeclient-test
@@ -72,5 +73,5 @@ test-suite tictactoeclient-test
   build-depends:
       base >=4.7 && <5
     , brick
-    , tictactoeclient
+    , tictactoe
   default-language: Haskell2010

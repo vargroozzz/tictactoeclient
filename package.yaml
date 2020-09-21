@@ -1,4 +1,4 @@
-name: tictactoeclient
+name: tictactoe
 version: 0.1.0.0
 github: "githubuser/tictactoeclient"
 license: BSD3
@@ -32,7 +32,7 @@ library:
   source-dirs: src
 
 executables:
-  tictactoeclient-exe:
+  tictactoe:
     main: Main.hs
     source-dirs: app
     ghc-options:
@@ -40,10 +40,10 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - tictactoeclient
+      - tictactoe
 
 tests:
-  tictactoeclient-test:
+  tictactoe-test:
     main: Spec.hs
     source-dirs: test
     ghc-options:
@@ -51,4 +51,4 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - tictactoeclient
+      - tictactoe

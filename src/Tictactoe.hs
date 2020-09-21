@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lib
+module Tictactoe
   ( runUI
   )
 where
 
+import           UI.Dialog
 import           Brick
 import qualified Brick.AttrMap                 as A
 import qualified Brick.Main                    as M
@@ -41,15 +42,15 @@ drawUI d = [ui]
  where
   ui = D.renderDialog d $ C.hCenter $ padAll 1 $ str "Choose the table size."
 
-appEvent
+dialogEvent
   :: D.Dialog String
   -> BrickEvent () e
   -> T.EventM () (T.Next (D.Dialog String))
-appEvent d (VtyEvent ev) = case ev of
+dialogEvent d (VtyEvent ev) = case ev of
   V.EvKey V.KEsc   [] -> M.halt d
   V.EvKey V.KEnter [] -> M.halt d
   _                   -> M.continue =<< D.handleDialogEvent ev d
-appEvent d _ = M.continue d
+dialogEvent d _ = M.continue d
 
 initialState :: D.Dialog String
 initialState = D.dialog (Just "Title") (Just (0, choices)) 50
@@ -69,17 +70,17 @@ cellAttr, cellSelectedAttr :: AttrName
 cellAttr = attrName "cellAttr"
 cellSelectedAttr = attrName "cellAttr"
 
-theApp :: M.App (D.Dialog String) e ()
-theApp = M.App { M.appDraw         = drawUI
-               , M.appChooseCursor = M.showFirstCursor
-               , M.appHandleEvent  = appEvent
-               , M.appStartEvent   = return
-               , M.appAttrMap      = const theMap
-               }
+dialogApp :: M.App (D.Dialog String) e ()
+dialogApp = M.App { M.appDraw         = drawUI
+                  , M.appChooseCursor = M.neverShowCursor
+                  , M.appHandleEvent  = dialogEvent
+                  , M.appStartEvent   = return
+                  , M.appAttrMap      = const theMap
+                  }
 
 runUI :: IO ()
 runUI = do
-  d        <- M.defaultMain theApp initialState
+  d        <- M.defaultMain dialogApp initialState
   request' <- parseRequest "GET http://127.0.0.1:8080/table"
   let request =
         setRequestQueryString [parseTable (D.dialogSelection d)] request'

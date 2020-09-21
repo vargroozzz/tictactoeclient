@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import           Tictactoe
 
 main :: IO ()
 main = runUI
