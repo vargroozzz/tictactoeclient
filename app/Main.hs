@@ -1,6 +1,6 @@
 module Main where
 
-import           Tictactoe
+import           UI
 
 main :: IO ()
-main = runUI
+main = mainUI
