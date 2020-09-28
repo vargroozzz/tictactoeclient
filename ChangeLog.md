@@ -1,3 +1,3 @@
-# Changelog for tictactoeclient
+# Changelog for tictactoe
 
 ## Unreleased changes

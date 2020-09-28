@@ -10,18 +10,16 @@ module Game
   , Game(..)
   , Direction(..)
   , mkGame
-  , cellFromMaybeSide
   , moveCursor
   , answerCell
   , updateField
-  , resetGame
   , gameSolved
   , getRegion
   , getSize
   , randSide
   )
 where
-import           Data.Maybe
+import           Data.Maybe                     ( fromMaybe )
 import           System.Random                  ( Random(randomIO) )
 import           Data.Function                  ( (&) )
 import           Data.Aeson
@@ -32,7 +30,7 @@ import           Lens.Micro                     ( ix
                                                 , (%~)
                                                 )
 import           Network.HTTP.Simple
-import           GHC.Generics
+import           GHC.Generics                   ( Generic )
 import           GHC.Read
 import qualified Text.Read.Lex                 as L
 import           Text.Read                      ( readMaybe
@@ -94,19 +92,10 @@ data Direction
   | West
   deriving (Read, Show)
 
-cellFromMaybeSide :: Maybe Side -> Cell
-cellFromMaybeSide (Just s) = Input s
-cellFromMaybeSide Nothing  = Empty
 
-mkGame :: [String] -> Game
-mkGame xs = Game { cursor = (0, 0)
-                 , side   = X
-                 , grid   = fmap mkCell <$> xs
-                 , winner = Nothing
-                 }
- where
-  mkCell ' ' = Empty
-  mkCell ch  = Input . read $ [ch]
+mkGame :: Int -> Side -> Game
+mkGame size s =
+  Game { cursor = (0, 0), side = s, grid = table size, winner = Nothing }
 
 moveCursor :: Direction -> Game -> Game
 moveCursor direction game = (\c -> game { cursor = c }) $ case direction of
@@ -121,7 +110,6 @@ moveCursor direction game = (\c -> game { cursor = c }) $ case direction of
          | n < 0     = n + size
          | otherwise = n
 
--- TODO: Remove need for lenses
 transformCell :: (Cell -> Cell) -> Game -> Game
 transformCell f game = game { grid = grid game & ix y . ix x %~ fun }
  where
@@ -135,12 +123,6 @@ answerCell ch = transformCell $ \case
   _ -> Input . read $ [ch]
 
 
-
-resetGame :: Game -> Game
-resetGame game = game { grid = fmap f <$> grid game }
- where
-  f = \case
-    _ -> Empty
 
 gameSolved :: Game -> Maybe Side
 gameSolved game | Just X `elem` solveds = Just X
@@ -193,7 +175,7 @@ randSide = do
 
 updateField :: Game -> IO Game
 updateField game = do
-  request' <- parseRequest "GET http://127.0.0.1:8080/table"
+  request' <- parseRequest "GET http://127.0.0.1:8080/game"
   let request = setRequestBodyJSON
         (TurnReq (side game) (fmap show <$> grid game))
         request'
@@ -204,3 +186,6 @@ updateField game = do
 
 readCell :: String -> Cell
 readCell cell = fromMaybe Empty (readMaybe cell)
+
+table :: Int -> [[Cell]]
+table size = replicate size . replicate size $ Empty

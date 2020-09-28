@@ -3,11 +3,11 @@ module UI
   )
 where
 
-import           System.IO                      ( hFlush
-                                                , stdout
-                                                )
+
 import           Game
 import           SizeSelect
+import           SideSelect
+import           NewGameSelect
 import           Brick
 import           Brick.Widgets.Border           ( border
                                                 , borderWithLabel
@@ -21,7 +21,10 @@ import           Brick.Widgets.Center           ( center )
 import           Data.List                      ( intersperse )
 import           Data.List.Split                ( chunksOf )
 import qualified Graphics.Vty                  as V
-import           Lens.Micro
+import           Lens.Micro                     ( (&)
+                                                , (%~)
+                                                , ix
+                                                )
 import           Brick.Widgets.Dialog           ( dialogSelection )
 import           Data.Maybe                     ( fromMaybe )
 
@@ -50,9 +53,6 @@ handleEvent (Game c s g (Just w)) _ = halt (Game c s g (Just w))
 handleEvent game (VtyEvent (V.EvKey key [V.MCtrl])) = case key of
     -- Quit
   V.KChar 'c' -> halt game
-
-  -- Reset
-  -- V.KChar 'r' -> continue . resetGame $ game
   -- Other
   _           -> continue game
 
@@ -69,7 +69,7 @@ handleEvent game (VtyEvent (V.EvKey V.KEnter [])) =
         _ -> continue game
 
 handleEvent game (VtyEvent (V.EvKey key [])) = continue $ case key of
-    -- Move by cell
+    -- Move
   V.KUp       -> moveCursor North game
   V.KDown     -> moveCursor South game
   V.KLeft     -> moveCursor West game
@@ -116,11 +116,6 @@ drawGrid game =
     & fmap vBox
     & intersperse (withBorderStyle unicodeBold vBorder)
     & hBox
-    -- & intersperse
-    --     (withBorderStyle unicodeBold
-    --                      (hBorderWithLabel (str "╋━━━━━━━━━━━━━━━━━━━━━━━╋"))
-    --     )
-    -- & vBox
     & border
     & withBorderStyle unicodeBold
     & setAvailableSize (50, 26)
@@ -165,31 +160,23 @@ app = App { appDraw         = \x -> [drawUI x]
 
 mainUI :: IO ()
 mainUI = do
-  d <- defaultMain sizeSelectApp sizeSelectInitState
-  let size = parseSize . dialogSelection $ d
-  putStr $ unlines
-    [ "SUDOKU"
-    , "  1) Start game for X"
-    , "  2) Start game for O"
-    , "  3) Start game for random side"
-    , "  *) Quit"
-    ]
-  response <- prompt "> "
-  case head' response of
-    '1' -> do
-      victor <- defaultMain app (mkGame . table $ size)
-      simpleMain . winnerWidget . cellFromMaybeSide . winner $ victor
-      mainUI
-    '2' -> do
-      victor <- defaultMain app ((mkGame . table $ size) { side = O })
-      simpleMain . winnerWidget . cellFromMaybeSide . winner $ victor
-      mainUI
-    '3' -> do
-      rSide  <- randSide
-      victor <- defaultMain app ((mkGame . table $ size) { side = rSide })
-      simpleMain . winnerWidget . cellFromMaybeSide . winner $ victor
-      mainUI
-    _ -> putStrLn "Quitting..."
+  dSize <- defaultMain sizeSelectApp sizeSelectInitState
+  dSide <- defaultMain sideSelectApp sideSelectInitState
+  let size = parseSize . dialogSelection $ dSize
+  side <- fromMaybe (return undefined) (dialogSelection dSide)
+  let game' = case side of
+        X -> return (mkGame size side)
+        O -> updateField (mkGame size side)
+  game     <- game'
+  endGame  <- defaultMain app game
+  nextStep <- defaultMain newGameSelectApp
+                          (newGameSelectInitState . winner $ endGame)
+  case dialogSelection nextStep of
+    (Just NewGame) -> mainUI
+    (Just Quit   ) -> putStrLn "Thx for game"
+    _              -> putStrLn "Something went wrong, but thx for game"
+
+
  where
   head' [] = ' '
   head' x  = head x
@@ -199,16 +186,6 @@ mainUI = do
   parseSize (Just "7x7"  ) = 7
   parseSize (Just sizeStr) = read [head sizeStr]
   parseSize Nothing        = 0
-
-
-table :: Int -> [String]
-table size = replicate size . replicate size $ ' '
-
-prompt :: String -> IO String
-prompt text = do
-  putStr text
-  hFlush stdout
-  getLine
 
 winnerWidget :: Cell -> Widget ()
 winnerWidget winner =

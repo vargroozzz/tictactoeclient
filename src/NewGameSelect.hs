@@ -1,9 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module SizeSelect
-  ( sizeSelectApp
-  , sizeSelectInitState
+module NewGameSelect
+  ( newGameSelectApp
+  , newGameSelectInitState
+  , Chosen(..)
   )
 where
+
+import           Game                           ( Side(..) )
 
 import           Brick                          ( App(..)
                                                 , attrMap
@@ -37,35 +40,46 @@ import           Graphics.Vty                   ( defAttr
                                                 , yellow
                                                 , Key(KEnter, KEsc)
                                                 )
+import           Data.Maybe                     ( fromMaybe )
 
-drawUI :: Dialog String -> [Widget ()]
+
+data Chosen = NewGame | Quit
+
+drawUI :: Dialog Chosen -> [Widget ()]
 drawUI d = [ui]
-  where ui = renderDialog d $ hCenter $ padAll 1 $ str "Choose the table size."
+ where
+  ui =
+    renderDialog d $ hCenter $ padAll 1 $ str "Do you want to start new game?"
 
-sizeSelectEvent
-  :: Dialog String -> BrickEvent () e -> EventM () (Next (Dialog String))
-sizeSelectEvent d (VtyEvent ev) = case ev of
+newGameSelectEvent
+  :: Dialog Chosen -> BrickEvent () e -> EventM () (Next (Dialog Chosen))
+newGameSelectEvent d (VtyEvent ev) = case ev of
   EvKey KEsc   [] -> halt d
   EvKey KEnter [] -> halt d
   _               -> continue =<< handleDialogEvent ev d
-sizeSelectEvent d _ = continue d
+newGameSelectEvent d _ = continue d
 
-sizeSelectInitState :: Dialog String
-sizeSelectInitState = dialog Nothing (Just (0, choices)) 50
-  where choices = [("3x3", "3x3"), ("5x5", "5x5"), ("7x7", "7x7")]
+newGameSelectInitState :: Maybe Side -> Dialog Chosen
+newGameSelectInitState winner = dialog
+  ((\s -> "The winner is: " ++ show s) <$> winner)
+  (Just (0, choices))
+  50
+  where choices = [("Start new game", NewGame), ("Quit", Quit)]
 
-sizeSelectMap :: AttrMap
-sizeSelectMap = attrMap
+
+
+newGameSelectMap :: AttrMap
+newGameSelectMap = attrMap
   defAttr
   [ (dialogAttr        , white `on` blue)
   , (buttonAttr        , black `on` white)
   , (buttonSelectedAttr, bg yellow)
   ]
 
-sizeSelectApp :: App (Dialog String) e ()
-sizeSelectApp = App { appDraw         = drawUI
-                    , appChooseCursor = neverShowCursor
-                    , appHandleEvent  = sizeSelectEvent
-                    , appStartEvent   = return
-                    , appAttrMap      = const sizeSelectMap
-                    }
+newGameSelectApp :: App (Dialog Chosen) e ()
+newGameSelectApp = App { appDraw         = drawUI
+                       , appChooseCursor = neverShowCursor
+                       , appHandleEvent  = newGameSelectEvent
+                       , appStartEvent   = return
+                       , appAttrMap      = const newGameSelectMap
+                       }
