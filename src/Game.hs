@@ -23,9 +23,7 @@ import           Data.Maybe                     ( fromMaybe )
 import           System.Random                  ( Random(randomIO) )
 import           Data.Function                  ( (&) )
 import           Data.Aeson
-import           Data.List                      ( transpose
-                                                , nub
-                                                )
+import           Data.List                      ( transpose )
 import           Lens.Micro                     ( ix
                                                 , (%~)
                                                 )
@@ -36,7 +34,6 @@ import qualified Text.Read.Lex                 as L
 import           Text.Read                      ( readMaybe
                                                 , pfail
                                                 )
-import           Network.HTTP.Client.Conduit    ( Request(requestBody) )
 
 data TurnReq = TurnReq { sideTurn :: Side, gridReq :: [[String]] } deriving (Generic, Show)
 data TurnRes = TurnRes { sideWon :: Maybe Side, gridRes :: [[String]] } deriving (Generic, Show)
@@ -53,25 +50,27 @@ instance ToJSON TurnRes where
   toEncoding = genericToEncoding defaultOptions
 instance FromJSON TurnRes
 
-data Side = X | O deriving (Generic, Eq, Read, Show)
+data Side = X | O | Draw deriving (Generic, Eq, Read, Show)
 
 data Cell = Input Side | Empty
   deriving (Eq)
 
 instance Show Cell where
-  show (Input X) = "X"
-  show (Input O) = "O"
-  show Empty     = " "
+  show (Input X   ) = "X"
+  show (Input O   ) = "O"
+  show (Input Draw) = "Draw"
+  show Empty        = " "
 
 instance Read Cell where
   readPrec = parens
     (do
       L.Ident s <- lexP
       case s of
-        "X" -> return (Input X)
-        "O" -> return (Input O)
-        " " -> return Empty
-        _   -> pfail
+        "X"    -> return (Input X)
+        "O"    -> return (Input O)
+        "Draw" -> return (Input Draw)
+        " "    -> return Empty
+        _      -> pfail
     )
 
 type Row = [Cell]
@@ -136,22 +135,11 @@ gameSolved game | Just X `elem` solveds = Just X
   solved row | row == xs = Just X
              | row == os = Just O
              | otherwise = Nothing
-  solved' row =
-    ((length . filter (== Input X) $ row) >= 3)
-      || ((length . filter (== Input O) $ row) >= 3)
   xs = replicate (getSize game) (Input X)
   os = replicate (getSize game) (Input O)
   getDiagonal xs = zipWith (!!) xs [0 ..]
   solveds =
     mainDiagonalSolved : sideDiagonalSolved : rowsSolved ++ columnsSolved
-
-
-getColumns :: Game -> [[Cell]]
-getColumns game =
-  [ [ grid game !! row !! column | row <- [0 .. (size - 1)] ]
-  | column <- [0 .. (size - 1)]
-  ]
-  where size = getSize game
 
 getRegion :: Game -> [[Cell]]
 getRegion game =

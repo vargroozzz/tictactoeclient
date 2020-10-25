@@ -17,7 +17,10 @@ import           Brick.Widgets.Border           ( border
 import           Brick.Widgets.Border.Style     ( unicode
                                                 , unicodeBold
                                                 )
-import           Brick.Widgets.Center           ( center )
+import           Brick.Widgets.Center           ( vCenter
+                                                , hCenter
+                                                , center
+                                                )
 import           Data.List                      ( intersperse )
 import           Data.List.Split                ( chunksOf )
 import qualified Graphics.Vty                  as V
@@ -118,8 +121,9 @@ drawGrid game =
     & hBox
     & border
     & withBorderStyle unicodeBold
-    & setAvailableSize (50, 26)
+    & setAvailableSize (sizeMod * 10 + 2, sizeMod * 5 + 1)
     & padRight (Pad 1)
+  where sizeMod = getSize game
 
 drawHelp :: Widget ()
 drawHelp =
@@ -148,7 +152,8 @@ drawDebug game =
 
 
 drawUI :: Game -> Widget ()
-drawUI game = drawGrid game <+> (drawHelp <=> drawDebug game)
+drawUI game = (vCenter . hCenter . drawGrid $ game)
+  <+> vCenter (drawHelp <=> drawDebug game)
 
 app :: App Game e ()
 app = App { appDraw         = \x -> [drawUI x]
@@ -178,8 +183,6 @@ mainUI = do
 
 
  where
-  head' [] = ' '
-  head' x  = head x
   parseSize :: Maybe String -> Int
   parseSize (Just "3x3"  ) = 3
   parseSize (Just "5x5"  ) = 5
@@ -187,11 +190,4 @@ mainUI = do
   parseSize (Just sizeStr) = read [head sizeStr]
   parseSize Nothing        = 0
 
-winnerWidget :: Cell -> Widget ()
-winnerWidget winner =
-  withBorderStyle unicode
-    .  border
-    .  center
-    .  str
-    $  "The winner is: "
-    ++ show winner
+

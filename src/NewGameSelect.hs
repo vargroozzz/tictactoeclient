@@ -13,7 +13,6 @@ import           Brick                          ( App(..)
                                                 , continue
                                                 , halt
                                                 , neverShowCursor
-                                                , bg
                                                 , on
                                                 , padAll
                                                 , str
@@ -35,12 +34,9 @@ import           Brick.Widgets.Dialog           ( Dialog
 import           Graphics.Vty                   ( defAttr
                                                 , Event(EvKey)
                                                 , black
-                                                , blue
                                                 , white
-                                                , yellow
                                                 , Key(KEnter, KEsc)
                                                 )
-import           Data.Maybe                     ( fromMaybe )
 
 
 data Chosen = NewGame | Quit
@@ -71,9 +67,9 @@ newGameSelectInitState winner = dialog
 newGameSelectMap :: AttrMap
 newGameSelectMap = attrMap
   defAttr
-  [ (dialogAttr        , white `on` blue)
-  , (buttonAttr        , black `on` white)
-  , (buttonSelectedAttr, bg yellow)
+  [ (dialogAttr        , white `on` black)
+  , (buttonAttr        , white `on` black)
+  , (buttonSelectedAttr, black `on` white)
   ]
 
 newGameSelectApp :: App (Dialog Chosen) e ()

@@ -10,7 +10,6 @@ import           Brick                          ( App(..)
                                                 , continue
                                                 , halt
                                                 , neverShowCursor
-                                                , bg
                                                 , on
                                                 , padAll
                                                 , str
@@ -32,9 +31,7 @@ import           Brick.Widgets.Dialog           ( Dialog
 import           Graphics.Vty                   ( defAttr
                                                 , Event(EvKey)
                                                 , black
-                                                , blue
                                                 , white
-                                                , yellow
                                                 , Key(KEnter, KEsc)
                                                 )
 
@@ -57,9 +54,9 @@ sizeSelectInitState = dialog Nothing (Just (0, choices)) 50
 sizeSelectMap :: AttrMap
 sizeSelectMap = attrMap
   defAttr
-  [ (dialogAttr        , white `on` blue)
-  , (buttonAttr        , black `on` white)
-  , (buttonSelectedAttr, bg yellow)
+  [ (dialogAttr        , white `on` black)
+  , (buttonAttr        , white `on` black)
+  , (buttonSelectedAttr, black `on` white)
   ]
 
 sizeSelectApp :: App (Dialog String) e ()
